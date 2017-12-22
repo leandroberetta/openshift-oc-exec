@@ -1,0 +1,13 @@
+clusters:
+  - name: cluster1
+    url: https://cluster1:8443
+commands:
+  - name: tz
+    template: "oc set env dc {} TZ=America/Argentina/Buenos_Aires -n {}"
+    parameterGroups:
+      - parameters:
+        - app1
+        - prod
+      - parameters:
+        - app2
+        - prod
