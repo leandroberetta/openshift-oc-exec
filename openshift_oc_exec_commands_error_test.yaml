@@ -15,10 +15,3 @@ commands:
         - prod
   - name: deploy
     template: "oc rollout latest dc {} -n {}"
-    parameterGroups:
-      - parameters:
-        - app1
-        - prod
-      - parameters:
-        - app2
-        - prod

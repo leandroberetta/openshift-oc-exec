@@ -2,7 +2,6 @@ clusters:
   - name: cluster1
     url: https://cluster1:8443
   - name: cluster2
-    url: https://cluster2:8443
 commands:
   - name: tz
     template: "oc set env dc {} TZ=America/Argentina/Buenos_Aires -n {}"

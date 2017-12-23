@@ -7,22 +7,17 @@ import os
 import logging
 
 
-def config_logging():
-    logging.basicConfig(filename='openshift_oc_exec.log', level=logging.INFO)
+def get_commands_from_yaml(commands_file):
+    with open(commands_file) as f:
+        config = yaml.load(f)
+
+        clusters = config['clusters']
+        commands = config['commands']
+
+        return clusters, commands
 
 
-def get_config_from_yaml(config_file):
-    return yaml.load(open(config_file))
-
-
-def create_parser():
-    parser = argparse.ArgumentParser(description='')
-    parser.add_argument('config_file', metavar='config_file', type=str, help='configuration file')
-
-    return parser
-
-
-def execute_command(command):
+def execute_command(command): # pragma: no cover
     logging.info('executing command "{}"'.format(command))
 
     output = subprocess.check_output(command.split(' '), stderr=subprocess.STDOUT)
@@ -61,14 +56,14 @@ def process_commands(commands):
 
     for command in commands:
         logging.info('gathering commands for {}'.format(command['name']))
-
-        for parameterGroups in command['parameterGroups']:
-            try:
-                command_to_exec = command['template'].format(*parameterGroups['parameters'])
-                commands_to_exec.append(command_to_exec)
-                logging.info('command: "{}"'.format(command_to_exec))
-            except KeyError:
-                logging.error('error')
+        try:
+            for parameterGroups in command['parameterGroups']:
+                    command_to_exec = command['template'].format(*parameterGroups['parameters'])
+                    commands_to_exec.append(command_to_exec)
+                    logging.info('command: "{}"'.format(command_to_exec))
+        except KeyError:
+            logging.error('command file is malformed')
+            raise
 
     return commands_to_exec
 
@@ -76,27 +71,34 @@ def process_commands(commands):
 def execute_commands_by_clusters(commands, clusters):
     logging.info('executing commands...')
 
-    for cluster in clusters:
-        execute_command(get_login_command(cluster['url'], get_token_for_cluster(cluster['name'])))
+    try:
+        for cluster in clusters:
+            try:
+                execute_command(get_login_command(cluster['url'], get_token_for_cluster(cluster['name'])))
+            except KeyError:
+                logging.error('command file is malformed')
+                raise
 
-        for command in commands:
-            execute_command(command)
+            for command in commands:
+                    execute_command(command)
+    except subprocess.CalledProcessError as e:
+        logging.error('command failed with error {}'.format(e.output))
+
+        raise
 
 
-if __name__ == '__main__':
-    config_logging()
+if __name__ == '__main__':  # pragma: no cover
+    logging.basicConfig(filename='openshift_oc_exec.log', level=logging.INFO)
 
     logging.info('openshift oc exec process starting...')
-    parser = create_parser()
+
+    parser = argparse.ArgumentParser(description='')
+    parser.add_argument('commands_file', metavar='commands_file', type=str, help='commands file')
     parameters = parser.parse_args()
 
-    logging.info('getting configuration file from {}'.format(parameters.config_file))
+    logging.info('getting commands file from {}'.format(parameters.commands_file))
 
-    # Gets the YAML configuration
-    config = get_config_from_yaml(parameters.config_file)
-
-    clusters = config['clusters']
-    commands = config['commands']
+    clusters, commands = get_commands_from_yaml(parameters.commands_file)
 
     commands_to_exec = process_commands(commands)
 

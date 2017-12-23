@@ -3,3 +3,7 @@
 
 .idea
 *.iml
+
+.coverage
+htmlcov
+__pycache__
