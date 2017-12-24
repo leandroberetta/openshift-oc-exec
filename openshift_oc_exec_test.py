@@ -63,8 +63,10 @@ class OpenShiftOCExecTest(unittest.TestCase):
     def test_get_token_exception(self):
         clusters, commands = openshift_oc_exec.get_commands_from_yaml('openshift_oc_exec_test.yaml')
 
-        del os.environ['TOKEN_CLUSTER1']
-        del os.environ['TOKEN_CLUSTER2']
+        if 'TOKEN_CLUSTER1' in os.environ:
+            del os.environ['TOKEN_CLUSTER1']
+        if 'TOKEN_CLUSTER2' in os.environ:
+            del os.environ['TOKEN_CLUSTER2']
 
         commands_to_exec = openshift_oc_exec.process_commands(commands)
 
